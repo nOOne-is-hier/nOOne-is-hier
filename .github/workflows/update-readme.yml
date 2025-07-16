@@ -2,14 +2,13 @@ name: Update README metrics
 
 on:
   schedule:
-    - cron: '0 0 * * *'        # 매일 00:00 UTC
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
   update-readme:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    permissions: { contents: write }
 
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -18,20 +17,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1) 기본 브랜치 안전하게 가져오기 (schedule 변수를 못 쓸 때 대비)
       - name: Get default branch
         id: branch
         run: |
-          def_branch=$(gh repo view "$REPO" --json defaultBranchRef -q .defaultBranchRef.name)
-          echo "DEFAULT_BRANCH=$def_branch" >> "$GITHUB_OUTPUT"
+          def=$(gh repo view "$REPO" --json defaultBranchRef -q .defaultBranchRef.name)
+          echo "DEFAULT_BRANCH=$def" >> "$GITHUB_OUTPUT"
 
-      # 2) 최근 7일 커밋‑시간대 통계 생성
       - name: Build last‑7‑day commit‑hour table
         env:
           DEFAULT_BRANCH: ${{ steps.branch.outputs.DEFAULT_BRANCH }}
         run: |
           set -eo pipefail
-          echo "🔎 Repo: $REPO  |  Branch: $DEFAULT_BRANCH"
+          echo "🔎 Repo=$REPO  Branch=$DEFAULT_BRANCH"
 
           since=$(date -u -d '7 days ago' +'%Y-%m-%dT%H:%M:%SZ')
 
@@ -41,8 +38,8 @@ jobs:
             echo "|:----:|:---------:|"
           } > commit-hours.md
 
+          # 브랜치 파라미터 제거 → 기본 브랜치 자동 선택
           gh api "repos/$REPO/commits" \
-            -F sha="$DEFAULT_BRANCH" \
             -F since="$since" \
             -F per_page=100 --paginate \
             --jq '.[].commit.author.date' |
@@ -50,18 +47,16 @@ jobs:
           sort | uniq -c |
           awk '{printf "| %02d:00 | %d |\n", $2, $1}' >> commit-hours.md
 
-      # 3) README에 주입
       - name: Inject table into README
         run: |
           start='<!--START_SECTION:commit_hours-->'
           end='<!--END_SECTION:commit_hours-->'
           awk -v s="$start" -v e="$end" '
-            $0==s {print; while ((getline < "commit-hours.md")>0) print; skip=1; next}
+            $0==s {print; while ((getline<"commit-hours.md")>0) print; skip=1; next}
             $0==e {skip=0}
             skip!=1 {print}
           ' README.md > README.tmp && mv README.tmp README.md
 
-      # 4) 자동 커밋
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "🤖 chore: update last‑7‑day commit‑hour stats"
