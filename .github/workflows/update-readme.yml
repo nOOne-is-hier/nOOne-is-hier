@@ -2,7 +2,7 @@ name: Update README metrics (all repos, 30d)
 
 on:
   schedule:
-    - cron: '0 0 * * *'       # 매일 00:00 UTC (KST 09:00)
+    - cron: '0 0 * * *'           # 매일 00:00 UTC (KST 09:00)
   workflow_dispatch:
 
 jobs:
@@ -12,37 +12,40 @@ jobs:
       contents: write
 
     env:
-      DAYS: 30
+      DAYS: 30                     # 분석 기간(일)
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
     steps:
-    # ------------------------------------------------------------ #
+    ########################################################################
+    # 0) 체크아웃 & .gitignore 보강
+    ########################################################################
     - uses: actions/checkout@v4
 
-    # 0) 임시 파일만 .gitignore에 추가
     - name: Ensure temp files are ignored
       run: |
         cat <<'EOF' >> .gitignore
         # added by workflow — temp analytics
         hours.txt
-        hourcount.txt
         me.txt
         own.txt
         member.txt
         repos.txt
         EOF
 
-    # 1) Python + matplotlib 설치 ------------------------------- #
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    ########################################################################
+    # 1) Python 환경(matplotlib) 준비
+    ########################################################################
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.x'
 
     - name: Install matplotlib
       run: pip install matplotlib
 
-    # 2) 레포 목록 수집 ---------------------------------------- #
-    - name: Collect repositories (owner + member, fork 제외)
+    ########################################################################
+    # 2) 분석 대상 레포지토리 수집
+    ########################################################################
+    - name: Collect repositories (owner+member, fork 제외)
       id: repos
       run: |
         set -euo pipefail
@@ -52,10 +55,12 @@ jobs:
         GH_TOKEN=$GH_TOKEN gh api "user/repos?type=member&per_page=100" --paginate \
           --jq '.[]|select(.fork==false)|.full_name' > member.txt
         sort -u own.txt member.txt > repos.txt
-        echo "count=$(wc -l < repos.txt)" >> "$GITHUB_OUTPUT"
+        echo "repo_count=$(wc -l < repos.txt)" >> "$GITHUB_OUTPUT"
 
-    # 3) 최근 N일 커밋 시각 집계 -------------------------------- #
-    - name: Aggregate commit hours (last ${{ env.DAYS }} days)
+    ########################################################################
+    # 3) 커밋 시각 집계 (최근 N일)
+    ########################################################################
+    - name: Aggregate commit hours
       id: hours
       run: |
         set -euo pipefail
@@ -87,67 +92,62 @@ jobs:
         echo "night=$night"     >> $GITHUB_OUTPUT
         echo "total=$total"     >> $GITHUB_OUTPUT
 
-    # 4) commit‑hours.png 생성 ---------------------------------- #
+    ########################################################################
+    # 4) commit‑hours.png 그래프 생성 (리포 루트에 저장)
+    ########################################################################
     - name: Build commit-hours.png
       run: |
-        python - <<'PY'
-        import matplotlib.pyplot as plt, os
-        morning = int(os.getenv("MORNING"))
-        daytime = int(os.getenv("DAYTIME"))
-        evening = int(os.getenv("EVENING"))
-        night   = int(os.getenv("NIGHT"))
-        days    = os.getenv("DAYS")
-
-        labels  = ['Morning', 'Daytime', 'Evening', 'Night']
+        python - "$@" <<'PY' "${{ steps.hours.outputs.morning }}" \
+                            "${{ steps.hours.outputs.daytime }}" \
+                            "${{ steps.hours.outputs.evening }}" \
+                            "${{ steps.hours.outputs.night }}" \
+                            "${{ env.DAYS }}"
+        import sys, matplotlib.pyplot as plt, os
+        morning, daytime, evening, night, days = map(int, sys.argv[1:5]) + [sys.argv[5]]
+        labels  = ['Morning','Daytime','Evening','Night']
         values  = [morning, daytime, evening, night]
-        colors  = ['#FFD54F', '#4FC3F7', '#9575CD', '#607D8B']
+        colors  = ['#FFD54F','#4FC3F7','#9575CD','#607D8B']
 
-        fig, ax = plt.subplots(figsize=(6, 3))
-        bars    = ax.barh(labels, values, color=colors)
+        fig, ax = plt.subplots(figsize=(6,3))
+        bars = ax.barh(labels, values, color=colors)
         ax.set_xlabel('Commits')
         ax.set_title(f'🕒 Commits in Last {days} Days')
-
         for bar in bars:
             w = bar.get_width()
-            ax.text(w + 1, bar.get_y() + bar.get_height()/2,
-                    f'{w}', va='center')
-
+            ax.text(w+1, bar.get_y()+bar.get_height()/2, f'{w}', va='center')
         plt.tight_layout()
         plt.savefig('commit-hours.png', dpi=120, bbox_inches='tight')
         PY
-      env:
-        MORNING: ${{ steps.hours.outputs.morning }}
-        DAYTIME: ${{ steps.hours.outputs.daytime }}
-        EVENING: ${{ steps.hours.outputs.evening }}
-        NIGHT:   ${{ steps.hours.outputs.night }}
-        DAYS:    ${{ env.DAYS }}
 
-    # 5) README에 이미지 삽입 ----------------------------------- #
+    # 4‑1) 이미지 존재 확인 (디버그용)
+    - name: Verify image exists
+      run: |
+        ls -l commit-hours.png || (echo "❌ commit-hours.png missing" && exit 1)
+
+    ########################################################################
+    # 5) README 에 이미지 블록 주입
+    ########################################################################
     - name: Inject chart into README
       run: |
-        # 새 블록(여러 줄) ↦ Bash 변수 하나로 담기
-        new_block='<p align="center">
-        <img src="commit-hours.png" width="500" alt="Commit activity in last 30 days"/>
-        </p>'
-    
-        # Perl:   -0777  ▶ 전체 파일을 한 번에 읽기
-        #         s|||s  ▶ 구분자 | 로 변경, \n → \\n 로 이스케이프
-        perl -0777 -pe "s|<!--START_SECTION:commit_hours-->.*?<!--END_SECTION:commit_hours-->|<!--START_SECTION:commit_hours-->\\n${new_block//|/\\|}\\n<!--END_SECTION:commit_hours-->|s" \
-            README.md > README.tmp
-    
-        mv README.tmp README.md
+        new_block='<p align="center">\n<img src="commit-hours.png" width="500" alt="Commit activity in last 30 days"/>\n</p>'
+        awk -v nb="$new_block" '
+          /<!--START_SECTION:commit_hours-->/ { print; print nb; skip=1; next }
+          /<!--END_SECTION:commit_hours-->/   { skip=0; print; next }
+          skip!=1 { print }
+        ' README.md > README.tmp && mv README.tmp README.md
 
-
-
-    # 6) 변경 사항 커밋 ---------------------------------------- #
+    ########################################################################
+    # 6) 변경사항 커밋 & 푸시
+    ########################################################################
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
         commit_message: "🤖 chore: update ${{ env.DAYS }}d commit‑hour stats (image)"
-        file_pattern: |
-          README.md
-          commit-hours.png
+        # △ 한 줄에 모두 써야 두 파일 다 stage 됨
+        file_pattern: "README.md commit-hours.png"
 
-    # 7) (옵션) 변경 로그 출력 ---------------------------------- #
+    ########################################################################
+    # 7) (옵션) README diff 출력
+    ########################################################################
     - name: Show README diff
       if: always()
       run: git diff --stat README.md || echo "✅ No diff"
