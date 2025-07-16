@@ -2,20 +2,25 @@ name: Update README metrics
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * *'           # 매일 00:00 UTC
   workflow_dispatch:
 
 jobs:
   update-readme:
     runs-on: ubuntu-latest
-    permissions: { contents: write }
+    permissions:
+      contents: write             # README.md 푸시 권한
 
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       REPO: ${{ github.repository }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: gh login
+        run: echo "$GH_TOKEN" | gh auth login --with-token
 
       - name: Get default branch
         id: branch
@@ -30,16 +35,20 @@ jobs:
           set -eo pipefail
           echo "🔎 Repo=$REPO  Branch=$DEFAULT_BRANCH"
 
-          # 1) ISO8601 날짜
           since=$(date -u -d '7 days ago' '+%Y-%m-%dT%H:%M:%SZ')
-          
-          # 2) API 호출 (GET 고정)
+
+          {
+            echo "#### 🕒 Commits in Last 7 Days by Hour"
+            echo "| Hour | # Commits |"
+            echo "|:----:|:---------:|"
+          } > commit-hours.md
+
+          # 기본 브랜치에서 최근 7일 커밋 가져오기 (GET)!
           gh api "repos/$REPO/commits?sha=$DEFAULT_BRANCH&since=$since&per_page=100" \
             --paginate --jq '.[].commit.author.date' |
           cut -dT -f2 | cut -d: -f1 |
           sort | uniq -c |
           awk '{printf "| %02d:00 | %d |\n", $2, $1}' >> commit-hours.md
-
 
       - name: Inject table into README
         run: |
@@ -51,7 +60,8 @@ jobs:
             skip!=1 {print}
           ' README.md > README.tmp && mv README.tmp README.md
 
-      - uses: stefanzweifel/git-auto-commit-action@v4
+      - name: Commit updated README
+        uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "🤖 chore: update last‑7‑day commit‑hour stats"
           file_pattern: README.md
