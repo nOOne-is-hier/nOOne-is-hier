@@ -1,58 +1,73 @@
-name: Update README metrics
+name: Update README metrics (all repos, 30d)
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * *'        # 매일 00:00 UTC
   workflow_dispatch:
 
 jobs:
-  update-readme:
+  commit-stats:
     runs-on: ubuntu-latest
     permissions: { contents: write }
 
     env:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}         # ← PAT(repo 스코프)
-      REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      DAYS: 30                        # 최근 N일
 
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Get default branch
-        id: branch
-        run: |
-          def=$(gh repo view "$REPO" --json defaultBranchRef -q .defaultBranchRef.name)
-          echo "DEFAULT_BRANCH=$def" >> "$GITHUB_OUTPUT"
+    # 1) 전체 레포 목록 (소유 + 기여), 포크 제외
+    - name: Collect repositories
+      id: repos
+      run: |
+        gh api user --jq .login > me.txt
+        ME=$(cat me.txt)
 
-      - name: Build last‑7‑day commit‑hour table
-        env:
-          DEFAULT_BRANCH: ${{ steps.branch.outputs.DEFAULT_BRANCH }}
-        run: |
-          set -eo pipefail
-          since=$(date -u -d '7 days ago' '+%Y-%m-%dT%H:%M:%SZ')
+        gh api user/repos --paginate --jq '.[] | select(.fork==false) | .full_name' > own.txt
+        gh api user/repos -F type=member --paginate --jq '.[] | select(.fork==false) | .full_name' > member.txt
 
-          {
-            echo "#### 🕒 Commits in Last 7 Days by Hour"
-            echo "| Hour | # Commits |"
-            echo "|:----:|:---------:|"
-          } > commit-hours.md
+        sort -u own.txt member.txt > repos.txt
+        echo "count=$(wc -l < repos.txt)" >> "$GITHUB_OUTPUT"
 
-          gh api "repos/$REPO/commits?sha=$DEFAULT_BRANCH&since=$since&per_page=100" \
-            --paginate --jq '.[].commit.author.date' |
-          cut -dT -f2 | cut -d: -f1 |
-          sort | uniq -c |
-          awk '{printf "| %02d:00 | %d |\n", $2, $1}' >> commit-hours.md
+    # 2) 각 레포 기본 브랜치 & 최근 30일 커밋 시각 모으기
+    - name: Aggregate commits (last ${{ env.DAYS }} days)
+      run: |
+        since=$(date -u -d "$DAYS days ago" '+%Y-%m-%dT%H:%M:%SZ')
+        > hours.txt                    # 빈 파일 만들기
 
-      - name: Inject table into README
-        run: |
-          start='<!--START_SECTION:commit_hours-->'
-          end='<!--END_SECTION:commit_hours-->'
-          awk -v s="$start" -v e="$end" '
-            $0==s {print; while ((getline<"commit-hours.md")>0) print; skip=1; next}
-            $0==e {skip=0}
-            skip!=1 {print}
-          ' README.md > README.tmp && mv README.tmp README.md
+        while read repo; do
+          def=$(gh api "repos/$repo" --jq .default_branch)
+          gh api "repos/$repo/commits?sha=$def&since=$since&per_page=100" \
+            --paginate --jq '.[].commit.author.date' >> hours.txt || true
+        done < repos.txt
 
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: "🤖 chore: update last‑7‑day commit‑hour stats"
-          file_pattern: README.md
+        # 시간대별 집계
+        sort hours.txt | cut -dT -f2 | cut -d: -f1 |
+        uniq -c > hourcount.txt
+
+        {
+          echo "#### 🕒 Commits in Last ${DAYS} Days by Hour (All Repos)"
+          echo "| Hour | # Commits |"
+          echo "|:----:|:---------:|"
+          while read c h; do
+            printf "| %02d:00 | %d |\n" "$h" "$c"
+          done < hourcount.txt
+        } > commit-hours.md
+
+    # 3) README 주입
+    - name: Inject table
+      run: |
+        s='<!--START_SECTION:commit_hours-->'
+        e='<!--END_SECTION:commit_hours-->'
+        awk -v s="$s" -v e="$e" '
+          $0==s {print; while ((getline<"commit-hours.md")>0) print; skip=1; next}
+          $0==e {skip=0}
+          skip!=1 {print}
+        ' README.md > README.tmp && mv README.tmp README.md
+
+    # 4) 자동 커밋
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: "🤖 chore: update ${DAYS}d all‑repo commit‑hour stats"
+        file_pattern: README.md
