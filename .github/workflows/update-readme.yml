@@ -30,22 +30,16 @@ jobs:
           set -eo pipefail
           echo "🔎 Repo=$REPO  Branch=$DEFAULT_BRANCH"
 
-          since=$(date -u -d '7 days ago' +'%Y-%m-%dT%H:%M:%SZ')
-
-          {
-            echo "#### 🕒 Commits in Last 7 Days by Hour"
-            echo "| Hour | # Commits |"
-            echo "|:----:|:---------:|"
-          } > commit-hours.md
-
-          # 브랜치 파라미터 제거 → 기본 브랜치 자동 선택
-          gh api "repos/$REPO/commits" \
-            -F since="$since" \
-            -F per_page=100 --paginate \
-            --jq '.[].commit.author.date' |
+          # 1) ISO8601 날짜
+          since=$(date -u -d '7 days ago' '+%Y-%m-%dT%H:%M:%SZ')
+          
+          # 2) API 호출 (GET 고정)
+          gh api "repos/$REPO/commits?sha=$DEFAULT_BRANCH&since=$since&per_page=100" \
+            --paginate --jq '.[].commit.author.date' |
           cut -dT -f2 | cut -d: -f1 |
           sort | uniq -c |
           awk '{printf "| %02d:00 | %d |\n", $2, $1}' >> commit-hours.md
+
 
       - name: Inject table into README
         run: |
