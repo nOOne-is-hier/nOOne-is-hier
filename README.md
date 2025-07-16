@@ -98,7 +98,7 @@
 
 <!--START_SECTION:commit_hours-->
 <p align="center">
-<img src="commit-hours.png" width="600" alt="Commits by hour (KST)"/>
+<img src="commit-hours.png?ts=1752668630" width="600" alt="Commits by hour (KST)"/>
 </p>
 <!--END_SECTION:commit_hours-->
 
