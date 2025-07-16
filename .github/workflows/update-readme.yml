@@ -54,9 +54,7 @@ jobs:
           echo "#### 🕒 Commits in Last ${DAYS} Days by Hour (All Repos)"
           echo "| Hour | # Commits |"
           echo "|:----:|:---------:|"
-          while read c h; do
-            printf "| %02d:00 | %d |\n" "$h" "$c"
-          done < hourcount.txt
+          awk '{printf "| %02d:00 | %d |\n", $2, $1}' hourcount.txt >> commit-hours.md
         } > commit-hours.md
 
     # 3) README 주입
