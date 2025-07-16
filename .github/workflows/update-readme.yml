@@ -98,16 +98,18 @@ jobs:
     - name: Build commit-hours.png
       run: |
         python - "$@" <<'PY' "${{ steps.hours.outputs.morning }}" \
-                            "${{ steps.hours.outputs.daytime }}" \
-                            "${{ steps.hours.outputs.evening }}" \
-                            "${{ steps.hours.outputs.night }}" \
-                            "${{ env.DAYS }}"
-        import sys, matplotlib.pyplot as plt, os
-        morning, daytime, evening, night, days = map(int, sys.argv[1:5]) + [sys.argv[5]]
+                                "${{ steps.hours.outputs.daytime }}" \
+                                "${{ steps.hours.outputs.evening }}" \
+                                "${{ steps.hours.outputs.night }}" \
+                                "${{ env.DAYS }}"
+        import sys, matplotlib.pyplot as plt
+    
+        morning, daytime, evening, night, days = [*map(int, sys.argv[1:5]), int(sys.argv[5])]
+    
         labels  = ['Morning','Daytime','Evening','Night']
         values  = [morning, daytime, evening, night]
         colors  = ['#FFD54F','#4FC3F7','#9575CD','#607D8B']
-
+    
         fig, ax = plt.subplots(figsize=(6,3))
         bars = ax.barh(labels, values, color=colors)
         ax.set_xlabel('Commits')
