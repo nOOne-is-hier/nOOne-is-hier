@@ -19,7 +19,7 @@ jobs:
       - name: Update stats
         uses: thanhhaudev/github-stats@master
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           SHOW_METRICS: COMMIT_TIMES_OF_DAY
           TIME_ZONE: Asia/Seoul
           SECTION_NAME: readme-stats
