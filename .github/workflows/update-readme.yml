@@ -125,25 +125,26 @@ jobs:
     # 5) README에 이미지 삽입 ----------------------------------- #
     - name: Inject chart into README
       run: |
-        s='<!--START_SECTION:commit_hours-->'
-        e='<!--END_SECTION:commit_hours-->'
-        awk -v s="$s" -v e="$e" '
-          index($0,s) {
-            print gensub(/^[[:space:]]*/, "", 1) s
-            print "<p align=\"center\">"
-            print "  <img src=\"commit-hours.png\" width=\"500\" alt=\"Commit activity in last 30 days\"/>"
-            print "</p>"
-            print e
-            skip=1; next
-          }
-          index($0,e) { skip=0; next }
-          skip!=1 { print }
-        ' README.md > README.tmp && mv README.tmp README.md
+        # ① 파일 내용 한꺼번에 읽기
+        readme=$(cat README.md)
+        # ② START ~ END 사이를 전부 날려버리고, 이미지 블록으로 대체
+        new_block=$(cat <<'HTML'
+        <p align="center">
+          <img src="commit-hours.png" width="500" alt="Commit activity in last 30 days"/>
+        </p>
+        HTML
+        )
+        # ③ perl 한 줄로 치환
+        printf "%s" "$readme" | \
+          perl -0777 -pe 's/<!--START_SECTION:commit_hours-->.*?<!--END_SECTION:commit_hours-->/<!--START_SECTION:commit_hours-->\n'"$new_block"'\n<!--END_SECTION:commit_hours-->/s' \
+          > README.tmp
+        mv README.tmp README.md
+
 
     # 6) 변경 사항 커밋 ---------------------------------------- #
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: "🤖 chore: update ${DAYS}d commit‑hour stats (image)"
+        commit_message: "🤖 chore: update ${{ env.DAYS }}d commit‑hour stats (image)"
         file_pattern: |
           README.md
           commit-hours.png
