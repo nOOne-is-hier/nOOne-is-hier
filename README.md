@@ -88,8 +88,8 @@
   <tr valign="top">
     <!-- 왼쪽: 커밋 시간대 분포 (ASCII) -->
     <td>
-      <!--START_SECTION:readme-stats-->
-      <!--END_SECTION:readme-stats-->
+      <!--START_SECTION:commit_hours-->
+      <!--END_SECTION:commit_hours-->
     </td>
     <!-- 오른쪽: solved.ac 배지 -->
     <td>
