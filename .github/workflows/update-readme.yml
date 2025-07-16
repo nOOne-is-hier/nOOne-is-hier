@@ -76,15 +76,19 @@ jobs:
           awk '{printf "| %02d:00 | %d |\n", $2, $1}' hourcount.txt
         } > commit-hours.md
 
-    # 3) README 마커 갱신 -------------------------------------- #
+    # 3) README에 테이블 주입 --------------------------------- #
     - name: Inject table into README
       run: |
         s='<!--START_SECTION:commit_hours-->'
         e='<!--END_SECTION:commit_hours-->'
         awk -v s="$s" -v e="$e" '
-          $0==s {print; while ((getline<"commit-hours.md")>0) print; skip=1; next}
-          $0==e {skip=0}
-          skip!=1 {print}
+          index($0,s) {
+            print gensub(/^[[:space:]]*/, "", 1) s
+            while ((getline<"commit-hours.md")>0) print
+            skip=1; next
+          }
+          index($0,e) { skip=0 }
+          skip!=1 { print }
         ' README.md > README.tmp && mv README.tmp README.md
 
     # 4) 변경 사항이 있을 때만 자동 커밋 ----------------------- #
