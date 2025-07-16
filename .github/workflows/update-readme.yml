@@ -74,32 +74,29 @@ jobs:
     ########################################################################
     - name: Build commit-hours.png
       run: |
-        python <<'PY' "${{ env.DAYS }}"
+        python <<'PY'
         import matplotlib.pyplot as plt
-        from datetime import datetime, timedelta, timezone
-        import sys, pathlib
+        from datetime import datetime, timedelta
+        import os
         
-        days = int(sys.argv[1])
-        hourly = [0]*24
+        days = int(os.getenv("DAYS", 30))  # ← env에서 직접 가져옴
         
-        with open('hours.txt') as f:
+        hourly = [0] * 24
+        with open("hours.txt") as f:
             for line in f:
                 iso = line.strip()
-                if not iso:
-                    continue
-                # ISO 8601 → datetime(UTC) → KST(+9h)
-                dt = datetime.fromisoformat(iso.replace('Z', '+00:00'))
+                if not iso: continue
+                dt = datetime.fromisoformat(iso.replace("Z", "+00:00"))
                 kst = dt + timedelta(hours=9)
                 hourly[kst.hour] += 1
         
-        hours = range(24)
-        fig, ax = plt.subplots(figsize=(10,4))
-        ax.bar(hours, hourly, color="#4FC3F7")
-        ax.set_xticks(hours)
-        ax.set_xlabel("Hour of Day (KST)")
+        fig, ax = plt.subplots(figsize=(10, 4))
+        ax.bar(range(24), hourly, color="#4FC3F7")
+        ax.set_xticks(range(24))
+        ax.set_xlabel("Hour (KST)")
         ax.set_ylabel("Commits")
         ax.set_title(f"🕒 Commits by Hour (KST, Last {days} Days)")
-        ax.grid(axis="y", linestyle="--", alpha=0.4)
+        plt.grid(axis="y", linestyle="--", alpha=0.4)
         plt.tight_layout()
         plt.savefig("commit-hours.png", dpi=120, bbox_inches="tight")
         PY
