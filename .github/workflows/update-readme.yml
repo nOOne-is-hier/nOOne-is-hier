@@ -125,20 +125,18 @@ jobs:
     # 5) README에 이미지 삽입 ----------------------------------- #
     - name: Inject chart into README
       run: |
-        # ① 파일 내용 한꺼번에 읽기
-        readme=$(cat README.md)
-        # ② START ~ END 사이를 전부 날려버리고, 이미지 블록으로 대체
-        new_block=$(cat <<'HTML'
-        <p align="center">
-          <img src="commit-hours.png" width="500" alt="Commit activity in last 30 days"/>
-        </p>
-        HTML
-        )
-        # ③ perl 한 줄로 치환
-        printf "%s" "$readme" | \
-          perl -0777 -pe 's/<!--START_SECTION:commit_hours-->.*?<!--END_SECTION:commit_hours-->/<!--START_SECTION:commit_hours-->\n'"$new_block"'\n<!--END_SECTION:commit_hours-->/s' \
-          > README.tmp
+        # 새 블록(여러 줄) ↦ Bash 변수 하나로 담기
+        new_block='<p align="center">
+        <img src="commit-hours.png" width="500" alt="Commit activity in last 30 days"/>
+        </p>'
+    
+        # Perl:   -0777  ▶ 전체 파일을 한 번에 읽기
+        #         s|||s  ▶ 구분자 | 로 변경, \n → \\n 로 이스케이프
+        perl -0777 -pe "s|<!--START_SECTION:commit_hours-->.*?<!--END_SECTION:commit_hours-->|<!--START_SECTION:commit_hours-->\\n${new_block//|/\\|}\\n<!--END_SECTION:commit_hours-->|s" \
+            README.md > README.tmp
+    
         mv README.tmp README.md
+
 
 
     # 6) 변경 사항 커밋 ---------------------------------------- #
