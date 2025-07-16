@@ -23,3 +23,5 @@ jobs:
           SHOW_METRICS: COMMIT_TIMES_OF_DAY
           TIME_ZONE: Asia/Seoul
           SECTION_NAME: readme-stats
+          INPUT_ONLY_MAIN_BRANCH: true    # ← 기본 브랜치(주로 master/main)만 스캔
+          INPUT_EXCLUDE_FORK_REPOS: true   # ← 포크된 레포는 제외
