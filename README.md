@@ -88,15 +88,11 @@
   <tr valign="top">
     <!-- 왼쪽: 커밋 시간대 분포 (ASCII) -->
     <td>
-<!--START_SECTION:commit_hours--><!--START_SECTION:commit_hours--><!--START_SECTION:commit_hours-->
-#### 🕒 Commits in Last 30 Days by Time Period
-_Last updated: 2025-07-16 10:47 UTC_
-
-🌞 Morning      48 commits  ███████████   57.8%
-🌆 Daytime     25 commits  ██████░░   30.1%
-🌃 Evening      7 commits  █░░░░░░░░░░░░░░░░░    8.4%
-🌙 Night        3 commits  █░░░░░░░░░░░░░░░░░    3.6%
-      <!--END_SECTION:commit_hours-->
+<!--START_SECTION:commit_hours--><!--START_SECTION:commit_hours--><!--START_SECTION:commit_hours--><!--START_SECTION:commit_hours-->
+<p align="center">
+  <img src="commit-hours.png" width="500" alt="Commit activity in last 30 days"/>
+</p>
+<!--END_SECTION:commit_hours-->
     </td>
     <!-- 오른쪽: solved.ac 배지 -->
     <td>
