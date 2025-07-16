@@ -65,7 +65,8 @@ jobs:
         # 시간대별 집계 → commit-hours.md
         sort hours.txt | cut -dT -f2 | cut -d: -f1 | uniq -c > hourcount.txt
         {
-          echo "#### 🕒 Commits in Last ${DAYS} Days by Hour (All Repos)"
+          echo "#### 🕒 Commits in Last ${DAYS} Days by Hour (All Repos)"
+          echo "_Last updated: $(date -u "+%Y-%m-%d %H:%M UTC")_"
           echo "| Hour | # Commits |"
           echo "|:----:|:---------:|"
           awk '{printf "| %02d:00 | %d |\n", $2, $1}' hourcount.txt
