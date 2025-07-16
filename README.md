@@ -1,4 +1,4 @@
-<div align="center">
+<div align="center" style="display: flex; flex-wrap: nowrap; gap: 4px; justify-content: center;">
   <a href="mailto:lasnier@naver.com">
     <img src="https://img.shields.io/badge/Email-lasnier@naver.com-D14836?style=for-the-badge&logo=gmail&logoColor=white"/>
   </a>
