@@ -110,7 +110,8 @@ jobs:
     ########################################################################
     - name: Inject chart into README
       run: |
-        new_block='<p align="center">\n<img src="commit-hours.png" width="600" alt="Commits by hour (KST)"/>\n</p>'
+        ts=$(date +%s)
+        new_block="<p align=\"center\">\n<img src=\"commit-hours.png?ts=$ts\" width=\"600\" alt=\"Commits by hour (KST)\"/>\n</p>"
         awk -v nb="$new_block" '
           /<!--START_SECTION:commit_hours-->/ { print; print nb; skip=1; next }
           /<!--END_SECTION:commit_hours-->/   { skip=0; print; next }
