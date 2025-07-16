@@ -2,32 +2,36 @@ name: Update README metrics
 
 on:
   schedule:
-    # 매일 00:00 UTC(=09:00 KST) 실행
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * *'        # 매일 00:00 UTC
   workflow_dispatch:
 
 jobs:
   update-readme:
     runs-on: ubuntu-latest
     permissions:
-      contents: write          # README.md push 권한
+      contents: write
 
-    env:                        # 모든 스텝에서 공통 사용
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}         # ← PAT(repo 권한) 을 GH_TOKEN 으로
-      REPO: ${{ github.repository }}            # owner/repo
-      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      REPO: ${{ github.repository }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0        # (필요시) 커밋 로그 전부
+      - uses: actions/checkout@v4
 
-      # 1) 최근 7 일 커밋‑시간대 통계 생성
+      # 1) 기본 브랜치 안전하게 가져오기 (schedule 변수를 못 쓸 때 대비)
+      - name: Get default branch
+        id: branch
+        run: |
+          def_branch=$(gh repo view "$REPO" --json defaultBranchRef -q .defaultBranchRef.name)
+          echo "DEFAULT_BRANCH=$def_branch" >> "$GITHUB_OUTPUT"
+
+      # 2) 최근 7일 커밋‑시간대 통계 생성
       - name: Build last‑7‑day commit‑hour table
-        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ steps.branch.outputs.DEFAULT_BRANCH }}
         run: |
           set -eo pipefail
+          echo "🔎 Repo: $REPO  |  Branch: $DEFAULT_BRANCH"
 
           since=$(date -u -d '7 days ago' +'%Y-%m-%dT%H:%M:%SZ')
 
@@ -37,20 +41,17 @@ jobs:
             echo "|:----:|:---------:|"
           } > commit-hours.md
 
-          # GitHub REST API: 기본 브랜치 한정 + since 필터
           gh api "repos/$REPO/commits" \
             -F sha="$DEFAULT_BRANCH" \
             -F since="$since" \
-            -F per_page=100 \
-            --paginate \
+            -F per_page=100 --paginate \
             --jq '.[].commit.author.date' |
-          cut -dT -f2 | cut -d: -f1 |       # 시( Hour ) 추출
-          sort | uniq -c |                  # 카운트
+          cut -dT -f2 | cut -d: -f1 |
+          sort | uniq -c |
           awk '{printf "| %02d:00 | %d |\n", $2, $1}' >> commit-hours.md
 
-      # 2) README 주석 구간 덮어쓰기
+      # 3) README에 주입
       - name: Inject table into README
-        shell: bash
         run: |
           start='<!--START_SECTION:commit_hours-->'
           end='<!--END_SECTION:commit_hours-->'
@@ -60,9 +61,8 @@ jobs:
             skip!=1 {print}
           ' README.md > README.tmp && mv README.tmp README.md
 
-      # 3) 변경 사항 자동 커밋
-      - name: Commit updated README
-        uses: stefanzweifel/git-auto-commit-action@v4
+      # 4) 자동 커밋
+      - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "🤖 chore: update last‑7‑day commit‑hour stats"
           file_pattern: README.md
