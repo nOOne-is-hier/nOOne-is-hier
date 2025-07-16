@@ -1,4 +1,4 @@
-name: Update README metrics (all repos, 30d)
+name: Update README metrics (all repos, 180d)
 
 on:
   schedule:
@@ -12,7 +12,7 @@ jobs:
       contents: write
 
     env:
-      DAYS: 30
+      DAYS: 180
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
     steps:
@@ -79,7 +79,7 @@ jobs:
         from datetime import datetime, timedelta
         import os
         
-        days = int(os.getenv("DAYS", 30))  # ← env에서 직접 가져옴
+        days = int(os.getenv("DAYS", 180))  # ← env에서 직접 가져옴
         
         hourly = [0] * 24
         with open("hours.txt") as f:
@@ -95,7 +95,7 @@ jobs:
         ax.set_xticks(range(24))
         ax.set_xlabel("Hour (KST)")
         ax.set_ylabel("Commits")
-        ax.set_title(f"🕒 Commits by Hour (KST, Last {days} Days)")
+        ax.set_title(f"Commits by Hour (KST, Last {days} Days)")
         plt.grid(axis="y", linestyle="--", alpha=0.4)
         plt.tight_layout()
         plt.savefig("commit-hours.png", dpi=120, bbox_inches="tight")
@@ -111,7 +111,7 @@ jobs:
     - name: Inject chart into README
       run: |
         ts=$(date +%s)
-        new_block="<p align=\"center\">\n<img src=\"commit-hours.png?ts=$ts\" width=\"600\" alt=\"Commits by hour (KST)\"/>\n</p>"
+        new_block="<p align=\"center\">\n<img src=\"commit-hours.png?ts=$ts\" width=\"88%\" alt=\"Commits by hour (KST)\"/>\n</p>"
         awk -v nb="$new_block" '
           /<!--START_SECTION:commit_hours-->/ { print; print nb; skip=1; next }
           /<!--END_SECTION:commit_hours-->/   { skip=0; print; next }
