@@ -17,8 +17,8 @@
 
 ## 💼 Career & Activity
 
-- 2024.07 ~ 2025.06: 삼성청년SW·AI아카데미 (Python)
 - 2024.07 ~ : SK AX AI Leader Academy
+- 2024.07 ~ 2025.06: 삼성청년SW·AI아카데미 (Python)
 
 ---
 
@@ -74,31 +74,34 @@
 > `FastAPI`, `Next.js`, `LangChain`, `OpenAI`, `Docker`
 
 ---
+
 ## 🎯 My GitHub Dashboard
-<img
-  src="https://github-readme-streak-stats.herokuapp.com?user=nOOne-is-hier&theme=dark&hide_border=true"
-  alt="Streak Stats"
-/>
 
-<p align="center">
-  &nbsp;&nbsp;&nbsp;
-  <a href="https://solved.ac/profile/kanadachocolate">
-    <img
-      src="http://mazassumnida.wtf/api/v2/generate_badge?boj=kanadachocolate"
-      alt="Solved.ac Badge"
-    />
-  </a>
-  <!--START_SECTION:readme-stats-->
-<!--END_SECTION:readme-stats-->
-
-</p>
-
-<div align="right">
-
-
-
+<div align="center">
+  <img
+    src="https://github-readme-streak-stats.herokuapp.com?user=nOOne-is-hier&theme=dark&hide_border=true"
+    alt="Streak Stats"
+  />
 </div>
 
+<table align="center" border="0" cellspacing="16" cellpadding="0">
+  <tr valign="top">
+    <!-- 왼쪽: 커밋 시간대 분포 (ASCII) -->
+    <td>
+      <!--START_SECTION:readme-stats-->
+      <!--END_SECTION:readme-stats-->
+    </td>
+    <!-- 오른쪽: solved.ac 배지 -->
+    <td>
+      <a href="https://solved.ac/profile/kanadachocolate">
+        <img
+          src="http://mazassumnida.wtf/api/v2/generate_badge?boj=kanadachocolate"
+          alt="Solved.ac Badge"
+        />
+      </a>
+    </td>
+  </tr>
+</table>
 
 
 ---
