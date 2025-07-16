@@ -2,63 +2,88 @@ name: Update README metrics (all repos, 30d)
 
 on:
   schedule:
-    - cron: '0 0 * * *'        # 매일 00:00 UTC
+    - cron: '0 0 * * *'   # 매일 00:00 UTC (KST 09:00)
   workflow_dispatch:
 
 jobs:
   commit-stats:
     runs-on: ubuntu-latest
-    permissions: { contents: write }
+    permissions:
+      contents: write           # README 커밋
+      # 필요하면 추가 예) id-token: write
 
     env:
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      DAYS: 30                        # 최근 N일
+      DAYS: 30
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}   # 반드시 repo 권한 포함
 
     steps:
+    # ------------------------------------------------------------------ #
     - uses: actions/checkout@v4
 
-    # 1) 전체 레포 목록 (소유 + 기여), 포크 제외
-    - name: Collect repositories
+    # 0) gh CLI 토큰 인증 상태 확인 ---------------------------- #
+    - name: Authenticate gh CLI (debug)
+      run: |
+        echo "::add-mask::$GH_TOKEN"         # 토큰 마스킹
+        echo "$GH_TOKEN" | gh auth login --with-token --hostname github.com
+        gh auth status
+
+    # 1) 전체 레포 목록 수집 ----------------------------------- #
+    - name: Collect repositories (owner + member, fork 제외)
       id: repos
       run: |
+        set -euo pipefail
         gh api user --jq .login > me.txt
-    
-        # Owner repos (fork 제외)
-        gh api "user/repos?type=owner&per_page=100" --paginate \
+
+        # 소유 레포
+        GH_TOKEN=$GH_TOKEN gh api "user/repos?type=owner&per_page=100" --paginate \
           --jq '.[] | select(.fork==false) | .full_name' > own.txt
-    
-        # Member repos (fork 제외)
-        gh api "user/repos?type=member&per_page=100" --paginate \
+
+        # 멤버 레포
+        GH_TOKEN=$GH_TOKEN gh api "user/repos?type=member&per_page=100" --paginate \
           --jq '.[] | select(.fork==false) | .full_name' > member.txt
-    
+
         sort -u own.txt member.txt > repos.txt
         echo "count=$(wc -l < repos.txt)" >> "$GITHUB_OUTPUT"
 
-    # 2) 각 레포 기본 브랜치 & 최근 30일 커밋 시각 모으기
-    - name: Aggregate commits (last ${{ env.DAYS }} days)
+    - name: 🪓 Dump repos.txt (debug)
+      if: always()
       run: |
+        echo "### 📦 레포 목록 (총 $(wc -l < repos.txt)개)"
+        cat repos.txt
+
+    # 2) 최근 N일 커밋 시각 집계 ------------------------------- #
+    - name: Aggregate commit hours (last ${{ env.DAYS }} days)
+      run: |
+        set -euo pipefail
         since=$(date -u -d "$DAYS days ago" '+%Y-%m-%dT%H:%M:%SZ')
-        > hours.txt                    # 빈 파일 만들기
+        > hours.txt
 
         while read repo; do
-          def=$(gh api "repos/$repo" --jq .default_branch)
-          gh api "repos/$repo/commits?sha=$def&since=$since&per_page=100" \
+          echo "▶ $repo"
+          def=$(GH_TOKEN=$GH_TOKEN gh api "repos/$repo" --jq .default_branch)
+          GH_TOKEN=$GH_TOKEN gh api "repos/$repo/commits?sha=$def&since=$since&per_page=100" \
             --paginate --jq '.[].commit.author.date' >> hours.txt || true
         done < repos.txt
 
-        # 시간대별 집계
-        sort hours.txt | cut -dT -f2 | cut -d: -f1 |
-        uniq -c > hourcount.txt
+        if [ ! -s hours.txt ]; then
+          echo "⚠️  최근 $DAYS 일간 커밋이 없습니다."
+        fi
 
+        # 시간대별 집계 → commit-hours.md
+        sort hours.txt | cut -dT -f2 | cut -d: -f1 | uniq -c > hourcount.txt
         {
-          echo "#### 🕒 Commits in Last ${DAYS} Days by Hour (All Repos)"
+          echo "#### 🕒 Commits in Last ${DAYS} Days by Hour (All Repos)"
           echo "| Hour | # Commits |"
           echo "|:----:|:---------:|"
-          awk '{printf "| %02d:00 | %d |\n", $2, $1}' hourcount.txt >> commit-hours.md
+          awk '{printf "| %02d:00 | %d |\n", $2, $1}' hourcount.txt
         } > commit-hours.md
 
-    # 3) README 주입
-    - name: Inject table
+    - name: 🪓 Dump commit-hours.md (debug)
+      if: always()
+      run: cat commit-hours.md || true
+
+    # 3) README에 테이블 주입 --------------------------------- #
+    - name: Inject table into README
       run: |
         s='<!--START_SECTION:commit_hours-->'
         e='<!--END_SECTION:commit_hours-->'
@@ -66,10 +91,17 @@ jobs:
           $0==s {print; while ((getline<"commit-hours.md")>0) print; skip=1; next}
           $0==e {skip=0}
           skip!=1 {print}
-        ' README.md > README.tmp && mv README.tmp README.md
+        ' README.md > README.tmp
+        mv README.tmp README.md
 
-    # 4) 자동 커밋
+    - name: 🪓 Show injected section (debug)
+      if: always()
+      run: |
+        grep -n -A3 -B2 '<!--START_SECTION:commit_hours-->' README.md || true
+
+    # 4) 변경 사항 자동 커밋 ---------------------------------- #
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: "🤖 chore: update ${DAYS}d all‑repo commit‑hour stats"
+        commit_message: |
+          🤖 chore: update ${DAYS}d all‑repo commit‑hour stats
         file_pattern: README.md
