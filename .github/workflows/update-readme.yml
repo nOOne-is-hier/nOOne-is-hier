@@ -22,11 +22,15 @@ jobs:
       id: repos
       run: |
         gh api user --jq .login > me.txt
-        ME=$(cat me.txt)
-
-        gh api user/repos --paginate --jq '.[] | select(.fork==false) | .full_name' > own.txt
-        gh api user/repos -F type=member --paginate --jq '.[] | select(.fork==false) | .full_name' > member.txt
-
+    
+        # Owner repos (fork 제외)
+        gh api "user/repos?type=owner&per_page=100" --paginate \
+          --jq '.[] | select(.fork==false) | .full_name' > own.txt
+    
+        # Member repos (fork 제외)
+        gh api "user/repos?type=member&per_page=100" --paginate \
+          --jq '.[] | select(.fork==false) | .full_name' > member.txt
+    
         sort -u own.txt member.txt > repos.txt
         echo "count=$(wc -l < repos.txt)" >> "$GITHUB_OUTPUT"
 
