@@ -96,10 +96,8 @@
   </tr>
 </table>
 
-<!--START_SECTION:commit_hours--><!--START_SECTION:commit_hours-->
-<p align="center">
-  <img src="commit-hours.png" width="500" alt="Commit activity in last 30 days"/>
-</p>
+<!--START_SECTION:commit_hours-->
+<!-- 워크플로우가 이 사이를 자동으로 채울 겁니다 -->
 <!--END_SECTION:commit_hours-->
 
 ---
