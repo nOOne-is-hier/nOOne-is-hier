@@ -96,7 +96,7 @@
   </tr>
 </table>
 
-<!--START_SECTION:commit_hours-->
+<!--START_SECTION:commit_hours--><!--START_SECTION:commit_hours-->
 <p align="center">
   <img src="commit-hours.png" width="500" alt="Commit activity in last 30 days"/>
 </p>
