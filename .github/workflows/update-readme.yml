@@ -20,13 +20,6 @@ jobs:
     # ------------------------------------------------------------------ #
     - uses: actions/checkout@v4
 
-    # 0) gh CLI 토큰 인증 상태 확인 ---------------------------- #
-    - name: Authenticate gh CLI (debug)
-      run: |
-        echo "::add-mask::$GH_TOKEN"         # 토큰 마스킹
-        echo "$GH_TOKEN" | gh auth login --with-token --hostname github.com
-        gh auth status
-
     # 1) 전체 레포 목록 수집 ----------------------------------- #
     - name: Collect repositories (owner + member, fork 제외)
       id: repos
