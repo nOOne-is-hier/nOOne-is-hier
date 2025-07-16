@@ -1,10 +1,4 @@
 <div align="center" style="display: flex; flex-wrap: nowrap; gap: 4px; justify-content: center;">
-  <a href="mailto:lasnier@naver.com">
-    <img src="https://img.shields.io/badge/Email-lasnier@naver.com-D14836?style=for-the-badge&logo=gmail&logoColor=white"/>
-  </a>
-  <a href="https://github.com/nOOne-is-hier">
-    <img src="https://img.shields.io/badge/GitHub-nOOne--is--hier-181717?style=for-the-badge&logo=github&logoColor=white"/>
-  </a>
   <a href="https://ten-building-d4f.notion.site/1babc458d193802cb00fdee59a7e75d4">
     <img src="https://img.shields.io/badge/Portfolio-Notion-000000?style=for-the-badge&logo=notion&logoColor=white"/>
   </a>
