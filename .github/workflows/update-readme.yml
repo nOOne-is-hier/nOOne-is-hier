@@ -99,3 +99,9 @@ jobs:
         commit_message: |
           🤖 chore: update ${DAYS}d all‑repo commit‑hour stats
         file_pattern: README.md
+        skip_dirty_check: true
+
+    - name: 🧪 Check Git diff
+      run: |
+        git diff README.md || echo "✅ No visible diff"
+
