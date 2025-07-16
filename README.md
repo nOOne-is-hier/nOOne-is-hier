@@ -75,27 +75,17 @@
 
 ---
 
-## 🎯 My GitHub Dashboard
+## 🎯 My Dashboard
 
-<div align="center">
-  <img
-    src="https://github-readme-streak-stats.herokuapp.com?user=nOOne-is-hier&theme=dark&hide_border=true"
-    alt="Streak Stats"
-  />
-</div>
-
-<table align="center" border="0" cellspacing="16" cellpadding="0">
-  <tr valign="top">
-    <!-- 왼쪽: 커밋 시간대 분포 (ASCII) -->
-    <td>
-<!--START_SECTION:commit_hours--><!--START_SECTION:commit_hours--><!--START_SECTION:commit_hours--><!--START_SECTION:commit_hours-->
-<p align="center">
-  <img src="commit-hours.png" width="500" alt="Commit activity in last 30 days"/>
-</p>
-<!--END_SECTION:commit_hours-->
+<table align="center" border="0">
+  <tr>
+    <td align="center" valign="middle">
+      <img
+        src="https://github-readme-streak-stats.herokuapp.com?user=nOOne-is-hier&theme=dark&hide_border=true"
+        alt="Streak Stats"
+      />
     </td>
-    <!-- 오른쪽: solved.ac 배지 -->
-    <td>
+    <td align="center" valign="middle">
       <a href="https://solved.ac/profile/kanadachocolate">
         <img
           src="http://mazassumnida.wtf/api/v2/generate_badge?boj=kanadachocolate"
@@ -106,5 +96,10 @@
   </tr>
 </table>
 
+<!--START_SECTION:commit_hours-->
+<p align="center">
+  <img src="commit-hours.png" width="500" alt="Commit activity in last 30 days"/>
+</p>
+<!--END_SECTION:commit_hours-->
 
 ---
