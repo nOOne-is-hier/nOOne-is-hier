@@ -11,7 +11,7 @@
 
 ## 💼 Career & Activity
 
-- 2024.07 ~ : SK AX AI Leader Academy
+- 2025.07 ~ : SK AX AI Leader Academy
 - 2024.07 ~ 2025.06: 삼성청년SW·AI아카데미 (Python)
 
 ---
