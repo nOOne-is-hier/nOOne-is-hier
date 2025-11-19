@@ -1,14 +1,3 @@
-<div align="center" style="display: flex; flex-wrap: nowrap; gap: 4px; justify-content: center;">
-  <a href="https://ten-building-d4f.notion.site/1babc458d193802cb00fdee59a7e75d4">
-    <img src="https://img.shields.io/badge/Portfolio-Notion-000000?style=for-the-badge&logo=notion&logoColor=white"/>
-  </a>
-  <a href="#">
-    <img src="https://img.shields.io/badge/DevLog-Obsidian-7B68EE?style=for-the-badge&logo=obsidian&logoColor=white"/>
-  </a>
-</div>
-
----
-
 ## 💼 Career & Activity
 
 - 2025.07 ~ : SK AX AI Leader Academy
